@@ -272,7 +272,7 @@ const WEEKS=[
 /* ---------- storage (per-device convenience) ---------- */
 const K='cableplan.v1';
 let S={week:1,log:{},mode:'real'};
-const VIDS=new Set(['goblet','chestpress','row','split','curl','pallof','rdl','pulldown']);
+const VIDS=new Set(['goblet','chestpress','split','curl','pallof','rdl','pulldown']);
 try{const r=JSON.parse(localStorage.getItem(K)||'null');if(r&&typeof r==='object')S=Object.assign(S,r)}catch(e){}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 
@@ -476,7 +476,7 @@ function renderPlan(){
   [['Mon','Workout A'],['Tue','Walk 20-40 min'],['Wed','Workout B'],['Thu','Walk 20-40 min'],['Fri','Workout C'],['Sat','Optional easy activity'],['Sun','Rest']].map(r=>'<tr><td class="k">'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+
   '</tbody></table><p class="hint" style="margin:8px 0 0">Days can move. Keep a non-lifting day between the three sessions.</p></section>'+
   '<section class="panel"><h3>Reading the demos</h3><ul>'+
-  '<li>8 exercises have AI-generated video demos. Tap Show animation on any card for the mannequin with the working muscles glowing.</li>'+
+  '<li>7 exercises have AI-generated video demos. Tap Show animation on any card for the mannequin with the working muscles glowing.</li>'+
   '<li>Red glow marks the working muscles. It brightens at the hardest point of each rep.</li>'+
   '<li>The red label shows the phase and its pace: lift in about 1 second, lower in about 2.</li>'+
   '<li>The dotted line is the path of the hand or hips. The STACK gauge shows when the plates are loaded.</li>'+
