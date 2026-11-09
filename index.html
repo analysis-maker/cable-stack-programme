@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" type="image/svg+xml" href="./logo.svg">
 
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
@@ -67,7 +68,11 @@ nav.tabs a[aria-current="page"] small{color:var(--accent-ink)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .demo{position:relative;cursor:pointer;border-bottom:1px solid var(--line);background:var(--stage2)}
 .demo svg{display:block;width:100%;height:auto}
-.democap{display:flex;justify-content:space-between;padding:6px 12px;font:600 11px var(--mono);color:var(--muted);background:var(--stage2)}
+.demo video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#000}
+.demo.real svg,.demo.real .phase{display:none}
+.demo:not(.real) video{display:none}
+.modebtn{font:600 11px var(--mono);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:3px 10px;cursor:pointer}
+.democap{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 12px;font:600 11px var(--mono);color:var(--muted);background:var(--stage2)}
 [hidden]{display:none!important}
 .demo .phase{position:absolute;font:700 11px var(--mono);left:50%;transform:translateX(-50%);top:9px;white-space:nowrap;background:var(--hot);color:#fff;padding:3px 8px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase;font-size:10px}
 .cbody{padding:14px 14px 16px;display:grid;gap:10px}
@@ -266,7 +271,8 @@ const WEEKS=[
 
 /* ---------- storage (per-device convenience) ---------- */
 const K='cableplan.v1';
-let S={week:1,log:{}};
+let S={week:1,log:{},mode:'real'};
+const VIDS=new Set(['goblet','chestpress','row','split','curl','pallof','rdl','pulldown']);
 try{const r=JSON.parse(localStorage.getItem(K)||'null');if(r&&typeof r==='object')S=Object.assign(S,r)}catch(e){}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 
@@ -416,7 +422,7 @@ function buildDemo(id,host){
         if(i===0&&lift)lift.setAttribute('transform','translate(0,'+f2(-k*11)+')')});
       if(ph!==this.lastLab&&phaseEl){phaseEl.textContent=tl.L[ph];this.lastLab=ph}
     }};
-  const toggle=()=>{d.paused=!d.paused;host.querySelector('.play').textContent=d.paused?'Tap to play':'Tap to pause'};
+  const toggle=()=>{const v=host.querySelector('video');if(host.classList.contains('real')&&v){if(v.paused)v.play().catch(()=>{});else v.pause();host.querySelector('.play').textContent=v.paused?'Tap to play':'Tap to pause';return}d.paused=!d.paused;host.querySelector('.play').textContent=d.paused?'Tap to play':'Tap to pause'};
   host.addEventListener('click',toggle);
   host.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}});
   const [u0,p0]=phaseAt(tl,d.t/1000);d.draw(u0,p0);demos.push(d);
@@ -437,7 +443,7 @@ function renderDay(k){
     const L=S.log[key]||{};
     let dots='';for(let j=0;j<n;j++)dots+='<button type="button" class="dot'+(L.d&&L.d[j]?' on':'')+'" data-k="'+key+'" data-j="'+j+'" aria-label="Set '+(j+1)+' done">'+(j+1)+'</button>';
     const yt='https://www.youtube.com/results?search_query='+encodeURIComponent(ex.name+' proper form');
-    h+='<article class="card"><div class="demo" tabindex="0" data-id="'+id+'"><span class="phase"></span><div class="democap"><span>'+(i+1)+' of '+D.list.length+'</span><span class="play">'+(REDUCE?'Tap to play':'Tap to pause')+'</span></div></div>'+
+    h+='<article class="card"><div class="demo" tabindex="0" data-id="'+id+'"><span class="phase"></span>'+(VIDS.has(id)?'<video src="clips/'+id+'.mp4" poster="clips/'+id+'.jpg" muted loop playsinline autoplay preload="metadata" aria-label="'+esc(ex.name)+' video demo"></video>':'')+'<div class="democap"><span>'+(i+1)+' of '+D.list.length+'</span>'+(VIDS.has(id)?'<button type="button" class="modebtn">'+(S.mode==='real'?'Show animation':'Show video')+'</button>':'')+'<span class="play">'+(REDUCE?'Tap to play':'Tap to pause')+'</span></div></div>'+
      '<div class="cbody"><div><h3>'+esc(ex.name)+'</h3><div class="muscles"><i></i>'+esc(ex.mus)+'</div></div>'+
      '<div class="rx"><span class="big">'+n+' × '+reps+'</span></div>'+
      '<div class="pills"><span class="pill">'+ex.pulley+'</span><span class="pill">'+ex.att+'</span><span class="pill">Rest '+rest+'s</span></div>'+
@@ -450,6 +456,9 @@ function renderDay(k){
   });
   h+='</div>';view.innerHTML=h;
   view.querySelectorAll('.demo').forEach(x=>buildDemo(x.dataset.id,x));
+  const applyMode=()=>view.querySelectorAll('.demo').forEach(x=>{const v=x.querySelector('video');if(!v)return;const real=S.mode==='real';x.classList.toggle('real',real);x.querySelector('.modebtn').textContent=real?'Show animation':'Show video';if(real&&!REDUCE)v.play().catch(()=>{});else v.pause()});
+  applyMode();
+  view.querySelectorAll('.modebtn').forEach(b=>b.onclick=e=>{e.stopPropagation();S.mode=S.mode==='real'?'anim':'real';save();applyMode()});
   view.querySelectorAll('.dot').forEach(b=>b.onclick=()=>{const k2=b.dataset.k,j=+b.dataset.j;const L=S.log[k2]=S.log[k2]||{};L.d=L.d||[];L.d[j]=!L.d[j];b.classList.toggle('on',L.d[j]);save();
     if(L.d[j]){const rb=b.closest('.card').querySelector('[data-rest]');startTimer(+rb.dataset.rest,rb.dataset.name)}});
   view.querySelectorAll('input[data-k]').forEach(inp=>inp.oninput=()=>{const L=S.log[inp.dataset.k]=S.log[inp.dataset.k]||{};L.kg=inp.value;save()});
@@ -467,6 +476,7 @@ function renderPlan(){
   [['Mon','Workout A'],['Tue','Walk 20-40 min'],['Wed','Workout B'],['Thu','Walk 20-40 min'],['Fri','Workout C'],['Sat','Optional easy activity'],['Sun','Rest']].map(r=>'<tr><td class="k">'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+
   '</tbody></table><p class="hint" style="margin:8px 0 0">Days can move. Keep a non-lifting day between the three sessions.</p></section>'+
   '<section class="panel"><h3>Reading the demos</h3><ul>'+
+  '<li>8 exercises have AI-generated video demos. Tap Show animation on any card for the mannequin with the working muscles glowing.</li>'+
   '<li>Red glow marks the working muscles. It brightens at the hardest point of each rep.</li>'+
   '<li>The red label shows the phase and its pace: lift in about 1 second, lower in about 2.</li>'+
   '<li>The dotted line is the path of the hand or hips. The STACK gauge shows when the plates are loaded.</li>'+
